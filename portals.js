@@ -2,7 +2,8 @@
 (() => {
   'use strict';
   const H3=ROOM_HEIGHT, MAX_DEPTH=2, MAX_VIEWS=6;
-  const baseBuild=buildRoomMeshes;
+  const originalBuild=buildRoomMeshes;
+  const baseBuild=()=>{const m=originalBuild();return window.puzzleLab?.decorate?window.puzzleLab.decorate(m):m;};
   const sub=(a,b)=>a.map((x,i)=>x-b[i]), sum=(a,b)=>a.map((x,i)=>x+b[i]), mul=(a,k)=>a.map(x=>x*k);
   const dp=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0), cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   const identity={point:p=>p.slice(),normal:p=>p.slice()};
