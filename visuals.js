@@ -43,7 +43,7 @@
     }
     for(let x=.45;x<r.w-.2;x+=1.8){box(out,x,H-.065,r.h/2,.09,.10,r.h,stone);box(out,x,H-.13,r.h/2,.025,.025,r.h*.7,gold);}
     for(let z=.4;z<r.h-.2;z+=1.6)box(out,r.w/2,.018,z,r.w*.94,.018,.035,metal);
-    if(player.room==='B'||(level?.campaign===1&&player.room==='C')){
+    if((player.room==='B'&&level?.campaign!==7)||(level?.campaign===1&&player.room==='C')){
       const cx=r.w/2,cz=r.h/2,sign=player.grav===1?1:-1;
       for(let i=0;i<10;i++){const a=i*.72,rad=Math.min(r.w,r.h)*.23,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad,y=sign===1?.18+i*.22:H-.18-i*.22;box(out,x,y+sign*.083,z-.27,.74,.023,.025,gold);}
     }
