@@ -25,5 +25,5 @@
   function initialChapter(){const raw=read(STORAGE),saved=raw===null?NaN:Number(raw);if(Number.isInteger(saved)&&saved>=0&&saved<chapters.length&&!completed.has(saved))return saved;const first=chapters.findIndex((_,i)=>!completed.has(i));return first<0?chapters.length-1:first;}
   function start(){reset(campaignLevel(initialChapter()));}
   Object.assign(window.lab,{reset});window.atmosphereLab={poll,setAudio,initialChapter,get stats(){return {enabled,busy,voices:voices.size,ambient:ambient.length,audioState:audio?.state||'uninitialized',lastEvent,eventCount}}};
-  start();document.addEventListener('DOMContentLoaded',()=>{document.title='SPACE PARADOX V1.9 / 空间悖论';document.querySelector('header .eyebrow').textContent='SPACE PARADOX / 1.9 · 星渊航路';});
+  start();document.addEventListener('DOMContentLoaded',()=>{document.title='SPACE PARADOX V2.0 / 空间悖论';document.querySelector('header .eyebrow').textContent='SPACE PARADOX / 2.0 · 空间蓝图';});
 })();
