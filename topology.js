@@ -1,4 +1,4 @@
-// V2.7: seeded chord mutations, structural canonicalization and shortest-path counting.
+// V2.9: semantic topology fingerprints plus seeded chord mutations and shortest-path counting.
 (()=>{
 'use strict';
 const api=window.puzzleLab,cap=1000000;
