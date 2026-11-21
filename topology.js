@@ -19,8 +19,37 @@ function solve(p,from={room:'A',exp:0,hand:1,grav:1},seal=false,core=false){
 }
 // Exact canonical adjacency key for <=8 rooms, fixing A/D/E and the beacon.
 // Door orientation and phase are deliberately ignored in this structural measure.
-function signature(p){const ids=[...new Set(p.edges.flatMap(e=>[e[0][0],e[1][0]]))],fixed=['A','D','E',p.beacon],rest=ids.filter(id=>!fixed.includes(id));if(rest.length>5)throw Error('too many rooms');const edges=new Set(p.edges.map(e=>[e[0][0],e[1][0]].sort().join('')));let best=null;
- function perm(a,b){if(!b.length){const x=fixed.concat(a);let s='';for(let i=0;i<x.length;i++)for(let j=i+1;j<x.length;j++)s+=edges.has([x[i],x[j]].sort().join(''))?'1':'0';if(best===null||s<best)best=s;return;}b.forEach((id,i)=>perm(a.concat(id),b.filter((_,j)=>i!==j)));}perm([],rest);return ids.length+':'+best;
+// V2.9: canonical semantic fingerprint. Room relabeling is ignored, but door sides,
+// route order, directed scale transform, mirror/gravity transform and beacon phase are retained.
+// Reversing an edge also reverses its scale exponent, matching the reciprocal portal mapping.
+function signature(p){
+ const ids=[...new Set(p.edges.flatMap(e=>[e[0][0],e[1][0]]))].sort();
+ const fixed=['A','D','E',p.beacon];
+ if(new Set(fixed).size!==4||fixed.some(id=>!ids.includes(id)))throw Error('invalid fixed room roles');
+ const rest=ids.filter(id=>!fixed.includes(id));
+ if(rest.length>5)throw Error('too many rooms');
+ if(!Array.isArray(p.route)||!p.phase||!Number.isInteger(p.phase.exp)||![-1,1].includes(p.phase.hand)||![-1,1].includes(p.phase.grav))throw Error('invalid puzzle semantics');
+ let best=null;
+ function encode(order){
+  const labels=new Map(order.map((id,i)=>[id,String(i).padStart(2,'0')]));
+  const edgeKeys=p.edges.map(e=>{
+   if(!Array.isArray(e)||e.length!==5||typeof e[0]!=='string'||typeof e[1]!=='string')throw Error('invalid portal edge');
+   const [a,b,exp,hand,grav]=e;
+   if(!labels.has(a[0])||!labels.has(b[0])||!/[NESW]/.test(a[1])||!/[NESW]/.test(b[1]))throw Error('invalid portal endpoint');
+   const forward=labels.get(a[0])+a[1]+'>'+labels.get(b[0])+b[1]+':'+exp+','+hand+','+grav;
+   const reverse=labels.get(b[0])+b[1]+'>'+labels.get(a[0])+a[1]+':'+(-exp)+','+hand+','+grav;
+   return forward<reverse?forward:reverse;
+  }).sort().join(';');
+  const route=p.route.map(id=>labels.get(id)??'?').join(',');
+  if(route.includes('?'))throw Error('route references unknown room');
+  return 'v2|N'+ids.length+'|B'+labels.get(p.beacon)+'|P'+[p.phase.exp,p.phase.hand,p.phase.grav].join(',')+'|R'+route+'|E'+edgeKeys;
+ }
+ function perm(a,b){
+  if(!b.length){const value=encode(fixed.concat(a));if(best===null||value<best)best=value;return;}
+  for(let i=0;i<b.length;i++)perm(a.concat(b[i]),b.filter((_,j)=>j!==i));
+ }
+ perm([],rest);
+ return best;
 }
 function enrich(seed,tier=1,mode='any',avoid=[]){
  if(!['any','unique','multiple'].includes(mode)||!Array.isArray(avoid)||avoid.length>128)throw Error('生成模式非法');const base=api.generate(seed,tier),p=base.puzzle,baseline=solve(p),oldSig=signature(p),blocked=new Set(avoid);let s=(seed^0x7f4a7c15^tier)>>>0;
