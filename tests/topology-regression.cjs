@@ -92,6 +92,7 @@ const server = http.createServer((req, res) => {
           }catch(error){rows.push({tier,seed,passed:false,error:String(error.message||error)});failures.push({tier,seed,error:String(error.message||error)});}
         }
         signaturesByTier[tier]=sigs.size;legacySignaturesByTier[tier]=legacySigs.size;
+        if(sigs.size<legacySigs.size*2)failures.push({tier,error:'semantic signature diversity fell below 2x legacy baseline',legacy:legacySigs.size,semantic:sigs.size});
         for(let i=0;i<6;i++){
           const seed=(20261121+tier*1000003+i*7919)>>>0;
           for(const mode of modes){
@@ -110,10 +111,13 @@ const server = http.createServer((req, res) => {
         }
       }
       const successful=mutation.filter(x=>x.found);
+      const byMode=Object.fromEntries(modes.map(mode=>[mode,mutation.filter(x=>x.mode===mode&&x.found).length]));
+      if(successful.length<Math.ceil(mutation.length*.8))failures.push({error:'bounded mutation success rate fell below 80%',found:successful.length,attempted:mutation.length});
+      for(const mode of modes)if(byMode[mode]<4)failures.push({mode,error:'fewer than 4 of 6 mutation samples found a valid candidate',found:byMode[mode]});
       return {
         total:rows.length,passed:rows.filter(x=>x.passed).length,failures,signaturesByTier,legacySignaturesByTier,signatureInvariants,
         mutation:{attempted:mutation.length,found:successful.length,distinctSignatures:new Set(successful.map(x=>x.signature)).size,
-          byMode:Object.fromEntries(modes.map(mode=>[mode,mutation.filter(x=>x.mode===mode&&x.found).length])),
+          byMode,
           samples:successful.slice(0,12)},
         panel:!!document.getElementById('robustnessPanel'),rows
       };
@@ -121,6 +125,7 @@ const server = http.createServer((req, res) => {
     await page.setViewportSize({width:390,height:844});
     const panelLayout=await page.locator('#robustnessPanel').evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,viewport:innerWidth}));
     if(report.passed!==report.total)throw new Error('One or more deterministic puzzle seeds failed invariants.');
+    if(report.failures.length)throw new Error('Regression invariants failed: '+JSON.stringify(report.failures.slice(0,8)));
     if(!report.panel)throw new Error('V2.9 robustness panel did not mount.');
     if(panelLayout.scrollWidth>panelLayout.clientWidth+2)throw new Error('Robustness panel overflows its own mobile container.');
     if(pageErrors.length)throw new Error('Browser runtime errors: '+pageErrors.join(' | '));
