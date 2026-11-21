@@ -27,46 +27,65 @@ A browser-based spatial-topology puzzle game and world-editing laboratory. The p
 - `atmosphere.js`: opt-in procedural audio, transition feedback and chapter resume.
 - `workshop.js`, `editor.js`, `groups.js`: world editing, direct manipulation and atomic group operations.
 - `templates.js`, `optimizer.js`, `evolution.js`: parametric architecture, playability-constrained search and seeded evolutionary search.
-- `puzzles.js`, `topology.js`: seeded paradox puzzle generation, phase-aware solving, topology mutations, structural signatures and shortest-path counting.
-- `robustness.js`: V2.8 deterministic multi-seed validation and relative-complexity seed selection.
+- `puzzles.js`: seeded paradox puzzle generation, phase-aware mission search and local jump-witness generation.
+- `topology.js`: phase-aware shortest-path counting, seeded topology mutations and V2.9 semantic topology fingerprints.
+- `robustness.js`: multi-seed validation and relative-complexity seed selection.
 
-## V2.8 — Seed Robustness Lab
+## V2.9 — Semantic Topology and Robustness
 
-The new panel is inserted below the topology-variant controls in the puzzle generator.
+### Semantic topology fingerprint
 
-For a selected difficulty, it evaluates 16, 32 or 64 reproducible seeds. The seed sequence is:
+The previous canonical signature only encoded the undirected room-adjacency matrix. It therefore collapsed many puzzles that shared the same abstract chain-and-shortcut graph even when their actual portal mechanics differed.
 
-`seed[i] = (base + i × 7919) mod 2^32`
+The V2.9 fingerprint now preserves:
 
-Each sample checks:
+1. Room roles: start, return room, core room and beacon.
+2. Canonical room relabeling for interchangeable intermediate rooms.
+3. Exact portal door sides at both ends.
+4. Reciprocal scale transform semantics (reversing an edge negates its scale exponent).
+5. Mirror and gravity transforms.
+6. Route order and the beacon's required phase.
 
-1. Generation result and required fields.
-2. Unique door endpoints and valid room/door references.
-3. Route endpoints, phase values and portal transform parameters.
-4. Platform count, finite coordinates and positive dimensions.
-5. Phase-aware graph solvability and agreement between the generator's minimum-action value and the independent topology solver.
-6. Stored jump witnesses and a fresh local jump-witness recheck for each adjacent platform pair.
-7. Canonical topology signature for structural-diversity reporting.
+It deliberately does not include room names or raw platform coordinates: those are labels and geometry, not room-graph topology. The fingerprint is a structural comparison key, not a claim that two levels have identical player experience.
 
-The report includes generation/pass rates, Wilson 95% confidence intervals, failure-category counts, topology diversity, P50/P95 generation time, and a JSON export.
+### Browser regression
 
-The recommended seed is selected by a batch-relative complexity proxy:
+The GitHub Actions workflow `.github/workflows/topology-regression.yml` launches Chromium and loads the real game, not a mocked puzzle API. It checks:
 
-- 55%: percentile rank of abstract minimum actions.
-- 25%: percentile rank of the longest local jump witness.
-- 20%: inverse percentile rank of the number of equally-short abstract solutions.
+- 96 deterministic seeds (32 per difficulty tier).
+- Deterministic generation, graph solvability and minimum-action agreement.
+- Unique portal endpoints, valid room references and valid phase/transform values.
+- Platform geometry and independent local jump-witness rechecks.
+- Signature invariance under intermediate-room renaming and reciprocal edge reversal.
+- Signature sensitivity to door-side, transform, route-order and beacon-phase changes.
+- 54 bounded mutation attempts (18 each for `any`, `unique`, and `multiple` shortest-solution modes).
+- The real in-page benchmark, recommendation application, JSON export and mobile panel overflow.
 
-The user can target P20, P50 or P80 and apply the recommended seed to the existing puzzle generator.
+### Observed baseline and V2.9 result
 
-### Interpretation limits
+The same 96 seed inputs were measured with the legacy adjacency-only signature and the V2.9 semantic signature:
 
-- The complexity score is relative to the current batch; it is not calibrated against human playtests.
-- A local jump witness certifies only a restricted adjacent-platform movement policy. It does not prove that arbitrary players can complete the entire level.
-- A 16–64 seed sample can reveal failures and recurring failure modes, but cannot prove that all possible seeds are valid. Repeat with an independent seed range before treating a repeated failure as systematic.
-- The in-app batch run evaluates the actual browser-loaded generator. A mocked UI smoke test is not a substitute for that real seed sweep.
+| Difficulty | Legacy signatures | V2.9 semantic signatures |
+|---|---:|---:|
+| Intro | 3 / 32 | 24 / 32 |
+| Advanced | 4 / 32 | 30 / 32 |
+| Challenge | 5 / 32 | 32 / 32 |
 
-## Validation performed for V2.8
+Across the sampled seeds:
 
-- JavaScript syntax check: passed.
-- Chromium UI contract smoke test with deterministic mock APIs: 32-sample run, target switching, recommendation application, cancellation, JSON export and 390px mobile layout all passed; no page errors or horizontal overflow.
-- This smoke test validates the panel wiring and controls only. It does **not** report real puzzle-generator success rates. Run the in-app benchmark to collect those measurements.
+- 96/96 generated puzzles passed all generation, graph, geometry and local jump-witness checks.
+- All six signature invariants passed for all 96 seeds (rename/reverse invariance and door/transform/phase/route sensitivity).
+- 54/54 bounded mutation searches found a candidate: 18/18 in each shortest-solution mode.
+- The mutation candidates contained 36 distinct V2.9 semantic signatures in this sample.
+- The real UI benchmark completed 16/16 samples, selected a recommendation, exported a 16-record JSON report and applied the recommended seed.
+- The panel itself had no horizontal overflow at a 390px viewport; no browser page errors were observed.
+
+These are measured results for the fixed seed ranges in the CI run, not proof over all 32-bit seeds or all player behavior. Local jump witnesses certify a restricted adjacent-platform policy, not arbitrary human play. The relative-complexity score remains an uncalibrated proxy until supported by human playtests.
+
+## V2.8 — Robustness Lab
+
+The in-game panel supports 16, 32 or 64 reproducible seeds, Wilson 95% confidence intervals, failure-category counts, generation-time P50/P95, complexity distribution and JSON export. Its target complexity options are batch-relative P20, P50 and P80, not human-calibrated difficulty labels.
+
+## Validation scope
+
+A successful automated seed sweep is a strong regression signal for the tested generator paths. It does not replace full playtesting of each chapter, collision and portal traversal checks in interactive play, accessibility review, or usability tests with players.

@@ -1,4 +1,4 @@
-// V2.8: deterministic multi-seed robustness bench and relative-complexity seed recommendation.
+// V2.9: semantic-topology-aware multi-seed validation and relative-complexity seed recommendation.
 (() => {
   'use strict';
   const puzzle = window.puzzleLab, topology = window.topologyLab, motion = window.templateLab;
@@ -12,7 +12,7 @@
   panel.className = 'workshop v28';
   panel.innerHTML = [
     '<h3>种子筛选与稳健性验证 / ROBUSTNESS LAB</h3>',
-    '<p>对固定难度进行可复现的多种子批量验证。检查拓扑可解性、最短动作一致性、平台跳跃见证与结构多样性；再从通过样本中推荐目标复杂度种子。</p>',
+    '<p>对固定难度进行可复现的多种子批量验证。检查拓扑可解性、最短动作一致性、平台跳跃见证与语义结构多样性。结构指纹保留门位、缩放/镜像/重力变换、路线顺序和信标相位；再从通过样本中推荐目标复杂度种子。</p>',
     '<div class="field"><label>种子起点<input id="v28Base" type="number" min="0" max="4294967295" step="1" value="20261121"></label><label>样本数量<select id="v28Count"><option value="16">16 组</option><option value="32" selected>32 组</option><option value="64">64 组</option></select></label><label>生成难度<select id="v28Tier"><option value="0">入门</option><option value="1" selected>进阶</option><option value="2">挑战</option></select></label><label>目标复杂度<select id="v28Target"><option value="easy">较易 · P20</option><option value="normal" selected>中等 · P50</option><option value="hard">较难 · P80</option></select></label></div>',
     '<div class="actions"><button class="primary" id="v28Run">运行批量验证</button><button id="v28Stop" disabled>停止</button><button id="v28Apply" disabled>应用推荐种子</button><button id="v28Export" disabled>导出 JSON</button></div>',
     '<div class="v28-progress"><span id="v28Progress"></span></div>',
@@ -162,7 +162,7 @@
     $r('v28Report').textContent=lines.join('\n');
     $r('v28Status').textContent=meta.cancelled?'已停止；以上为已完成样本。':meta.done?'验证完成：'+passed.length+'/'+rows.length+' 组通过全部门禁。':'已完成 '+rows.length+' 组。';
     $r('v28Progress').style.width=String(meta.progress??100)+'%';
-    latest={version:'2.8',generatedAt:new Date().toISOString(),meta,summary:{requested:meta.requested??rows.length,completed:rows.length,passed:passed.length,generated:generated.length,solvable:solved.length,jumpCertified:jump.length,topologyDiversity:signatures,passWilson95:passCI,solveWilson95:solveCI,failureCounts},recommendation:recommended,records:rows};
+    latest={version:'2.9',generatedAt:new Date().toISOString(),meta,summary:{requested:meta.requested??rows.length,completed:rows.length,passed:passed.length,generated:generated.length,solvable:solved.length,jumpCertified:jump.length,topologyDiversity:signatures,passWilson95:passCI,solveWilson95:solveCI,failureCounts},recommendation:recommended,records:rows};
   }
   async function runBatch() {
     if(running)return;
@@ -190,8 +190,8 @@
   $r('v28Target').addEventListener('change',()=>{if(latest?.records?.length)render(latest.records,latest.meta);});
   $r('v28Stop').onclick=()=>{cancelled=true;$r('v28Status').textContent='正在停止…';};
   $r('v28Apply').onclick=()=>{if(!recommended)return;$r('seed').value=String(recommended.seed);$r('v28Base').value=String(recommended.seed);$r('puzzleTier').value=String(recommended.tier);puzzle.launch(recommended.seed,recommended.tier);$r('v28Status').textContent='已应用推荐种子 '+recommended.seed+'。'};
-  $r('v28Export').onclick=()=>{if(!latest)return;const blob=new Blob([JSON.stringify(latest,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='space-paradox-v28-seed-report-'+Date.now()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+  $r('v28Export').onclick=()=>{if(!latest)return;const blob=new Blob([JSON.stringify(latest,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='space-paradox-v29-seed-report-'+Date.now()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);};
   const seedInput=$r('seed');if(seedInput&&Number.isInteger(Number(seedInput.value))){$r('v28Base').value=String(Number(seedInput.value));seedInput.addEventListener('change',()=>{$r('v28Base').value=seedInput.value;});}
   window.robustnessLab={inspect,scoreRows,runBatch,wilson,get latest(){return latest},get running(){return running},stop(){cancelled=true;}};
-  document.title='SPACE PARADOX V2.8 / 空间悖论';const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='SPACE PARADOX / 2.8 · 种子稳健性';
+  document.title='SPACE PARADOX V2.9 / 空间悖论';const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='SPACE PARADOX / 2.8 · 种子稳健性';
 })();
