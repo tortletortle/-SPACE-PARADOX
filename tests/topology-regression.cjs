@@ -121,7 +121,7 @@ const server = http.createServer((req, res) => {
     await page.setViewportSize({width:390,height:844});
     const panelLayout=await page.locator('#robustnessPanel').evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,viewport:innerWidth}));
     if(report.passed!==report.total)throw new Error('One or more deterministic puzzle seeds failed invariants.');
-    if(!report.panel)throw new Error('V2.8 robustness panel did not mount.');
+    if(!report.panel)throw new Error('V2.9 robustness panel did not mount.');
     if(panelLayout.scrollWidth>panelLayout.clientWidth+2)throw new Error('Robustness panel overflows its own mobile container.');
     if(pageErrors.length)throw new Error('Browser runtime errors: '+pageErrors.join(' | '));
 
@@ -138,7 +138,7 @@ const server = http.createServer((req, res) => {
     const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#v28Export').click()]);
     const downloadPath=await download.path();
     const exported=JSON.parse(fs.readFileSync(downloadPath,'utf8'));
-    if(exported.version!=='2.8'||exported.records.length!==16)throw new Error('Exported JSON report is invalid.');
+    if(exported.version!=='2.9'||exported.records.length!==16)throw new Error('Exported JSON report is invalid.');
     await page.locator('#v28Apply').click();
     const applied=await page.locator('#seed').inputValue();
     if(applied!==String(uiState.recommendation))throw new Error('Recommended seed was not applied to the puzzle generator.');
